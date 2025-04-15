@@ -101,6 +101,9 @@ func CleanAllImages() error {
 		return err
 	}
 	for _, image := range images {
+		if image == "" {
+			continue
+		}
 		err := CleanImage(image)
 		if err != nil {
 			return err
@@ -117,6 +120,9 @@ func CleanAllContainers() error {
 		return err
 	}
 	for _, container := range containers {
+		if container == "" {
+			continue
+		}
 		err := CleanContainer(container)
 		if err != nil {
 			return err
