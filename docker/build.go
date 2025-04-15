@@ -18,7 +18,7 @@ func Build(devc devcontainerspec.Devcontainer) error {
 		}
 	} else if devc.Config.DockerFile != "" {
 		// the image has to be build, check if the image already exists
-		imageName := getImageName(devc)
+		imageName := devc.GetImageName()
 		exists, err := checkImageExists(imageName)
 		logger.Debug().Str("imageName", imageName).Bool("exists", exists).Msg("checking if image exists")
 		if err != nil {
@@ -49,7 +49,7 @@ func pullImage(imagepath string) error {
 func buildImage(devc devcontainerspec.Devcontainer) error {
 	// run docker and build the image
 	dockerFilePath := filepath.Join("./.devcontainer", devc.Config.DockerFile)
-	err := exec.Command("docker", "build", "-f", dockerFilePath, "-t", getImageName(devc), "./.devcontainer").Run()
+	err := exec.Command("docker", "build", "-f", dockerFilePath, "-t", devc.GetImageName(), "./.devcontainer").Run()
 	if err != nil {
 		return err
 	}
@@ -64,18 +64,4 @@ func checkImageExists(hash string) (bool, error) {
 		return false, err
 	}
 	return len(output) > 0, nil
-}
-
-func getImageName(devc devcontainerspec.Devcontainer) string {
-	if devc.Config.Image != "" {
-		return devc.Config.Image
-	} else if devc.Config.DockerFile != "" {
-		return "devcli_" + filepath.Base(devc.Cwd) + "_" + devc.Hash[0:7]
-	} else {
-		return ""
-	}
-}
-
-func getContainerName(devc devcontainerspec.Devcontainer) string {
-	return "devcli_" + filepath.Base(devc.Cwd) + "_" + devc.Hash[0:7]
 }

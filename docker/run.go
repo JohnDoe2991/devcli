@@ -11,7 +11,7 @@ import (
 )
 
 func Run(devc devcontainerspec.Devcontainer) error {
-	containerName := getContainerName(devc)
+	containerName := devc.GetContainerName()
 	// first check if a container is already running
 	running, err := checkContainerRunning(containerName)
 	if err != nil {
@@ -95,18 +95,30 @@ func startContainer(containerName string) error {
 	return nil
 }
 
+func stopContainer(containerName string) error {
+	// stop the container
+	cmd := exec.Command("docker", "stop", containerName)
+
+	logger.Debug().Str("container", containerName).Msg("stopping container")
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func createAndStartContainer(devc devcontainerspec.Devcontainer) error {
 	// run the container
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	args := []string{"run", "-d", "--name", getContainerName(devc), "--volume", cwd + ":/workspaces/" + filepath.Base(cwd)}
+	args := []string{"run", "-d", "--name", devc.GetContainerName(), "--volume", cwd + ":/workspaces/" + filepath.Base(cwd)}
 	for _, mount := range devc.Config.Mounts {
 		args = append(args, "--mount", mount)
 	}
 	args = append(args, devc.Config.RunArgs...)
-	imageName := getImageName(devc)
+	imageName := devc.GetImageName()
 	//we keep the container running with a sleep so we can exec into it later
 	args = append(args, imageName, "/bin/bash", "-c", "while true; do sleep 5; done;")
 	cmd := exec.Command("docker", args...)

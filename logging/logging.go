@@ -13,6 +13,11 @@ const (
 
 var logger zerolog.Logger
 var loggerInit = false
+var writeToFile = false
+
+func WriteToLogFile(_writeToFile bool) {
+	writeToFile = _writeToFile
+}
 
 func initLog() {
 	runLogFile, err := os.OpenFile(
@@ -25,8 +30,12 @@ func initLog() {
 	}
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: "15:04:05", NoColor: false}
-	multi := zerolog.MultiLevelWriter(consoleWriter, runLogFile)
-	logger = zerolog.New(multi).With().Timestamp().Logger()
+	if writeToFile {
+		multi := zerolog.MultiLevelWriter(consoleWriter, runLogFile)
+		logger = zerolog.New(multi).With().Timestamp().Logger()
+	} else {
+		logger = zerolog.New(consoleWriter).With().Timestamp().Logger()
+	}
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	loggerInit = true
 }

@@ -11,6 +11,10 @@ import (
 	"regexp"
 )
 
+const (
+	NameSuffix string = "devcli"
+)
+
 // DevcontainerConfig represents the key fields from a devcontainer.json file
 type DevcontainerConfig struct {
 	Name              string   `json:"name,omitempty"`
@@ -146,4 +150,22 @@ func calculateDevcontainerHash(path string) (string, error) {
 	// Generate the final hash
 	hashBytes := h.Sum(nil)
 	return hex.EncodeToString(hashBytes), nil
+}
+
+func (devc Devcontainer) GetImageName() string {
+	if devc.Config.Image != "" {
+		return devc.Config.Image
+	} else if devc.Config.DockerFile != "" {
+		return devc.GetDevcNameSuffix() + devc.Hash[0:7]
+	} else {
+		return ""
+	}
+}
+
+func (devc Devcontainer) GetContainerName() string {
+	return devc.GetDevcNameSuffix() + devc.Hash[0:7]
+}
+
+func (devc Devcontainer) GetDevcNameSuffix() string {
+	return NameSuffix + "_" + filepath.Base(devc.Cwd) + "_"
 }
