@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -49,7 +50,11 @@ func pullImage(imagepath string) error {
 func buildImage(devc devcontainerspec.Devcontainer) error {
 	// run docker and build the image
 	dockerFilePath := filepath.Join("./.devcontainer", devc.Config.DockerFile)
-	err := exec.Command("docker", "build", "-f", dockerFilePath, "-t", devc.GetImageName(), "./.devcontainer").Run()
+	dockerFileBase := filepath.Dir(dockerFilePath)
+	cmd := exec.Command("docker", "build", "-f", dockerFilePath, "-t", devc.GetImageName(), dockerFileBase)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
 	if err != nil {
 		return err
 	}
