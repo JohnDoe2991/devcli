@@ -41,9 +41,12 @@ func Run(devc devcontainerspec.Devcontainer) error {
 			}
 			// first run, so we have to exec postCreateCommand
 			time.Sleep(2 * time.Second) // wait for the container to be ready
-			if devc.Config.PostCreateCommand != "" {
+			for _, postCreateCommand := range devc.Config.PostCreateCommands {
+				if postCreateCommand == "" {
+					continue
+				}
 				// exec into the container
-				if err := execCommand(containerName, false, false, []string{"sh", "-c", devc.Config.PostCreateCommand}); err != nil {
+				if err := execCommand(containerName, false, true, []string{"/bin/bash", "-ic", postCreateCommand}); err != nil {
 					return err
 				}
 			}
@@ -51,10 +54,13 @@ func Run(devc devcontainerspec.Devcontainer) error {
 	}
 	// exec into the container
 	time.Sleep(1 * time.Second) // wait for the container to be ready
-	if devc.Config.PostStartCommand != "" {
+	for _, postStartCommand := range devc.Config.PostStartCommands {
 		// exec into the container
-		logger.Debug().Str("container", containerName).Str("postStartCommand", devc.Config.PostStartCommand).Msg("executing postStartCommand")
-		if err := execCommand(containerName, false, false, []string{"sh", "-c", devc.Config.PostStartCommand}); err != nil {
+		if postStartCommand == "" {
+			continue
+		}
+		logger.Debug().Str("container", containerName).Str("postStartCommand", postStartCommand).Msg("executing postStartCommand")
+		if err := execCommand(containerName, false, true, []string{"/bin/bash", "-ic", postStartCommand}); err != nil {
 			return err
 		}
 	}
@@ -148,9 +154,9 @@ func execCommand(containerName string, interactive bool, asUser bool, args []str
 	cmd := exec.Command("docker", cmdargs...)
 	if interactive {
 		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
 	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	logger.Debug().Str("container", containerName).Bool("interactive", interactive).Bool("asUser", asUser).Strs("args", args).Msg("executing command in container")
 	err := cmd.Run()
 	if err != nil {

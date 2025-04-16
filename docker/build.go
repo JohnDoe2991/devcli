@@ -15,21 +15,21 @@ func Build(devc devcontainerspec.Devcontainer) error {
 		// pull the image
 		logger.Debug().Str("image", devc.Config.Image).Msg("pulling image")
 		if err := pullImage(devc.Config.Image); err != nil {
-			return err
+			return fmt.Errorf("could not pull image: %w", err)
 		}
 	} else if devc.Config.DockerFile != "" {
 		// the image has to be build, check if the image already exists
 		imageName := devc.GetImageName()
 		exists, err := checkImageExists(imageName)
-		logger.Debug().Str("imageName", imageName).Bool("exists", exists).Msg("checking if image exists")
 		if err != nil {
-			return err
+			return fmt.Errorf("error checking if image exists: %w", err)
 		}
+		logger.Debug().Str("imageName", imageName).Bool("exists", exists).Msg("checking if image exists")
 		if !exists {
 			// build the image
 			logger.Debug().Str("dockerfile", devc.Config.DockerFile).Msg("building image")
 			if err := buildImage(devc); err != nil {
-				return err
+				return fmt.Errorf("error while building the image: %w", err)
 			}
 		}
 	} else {
