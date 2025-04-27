@@ -50,8 +50,12 @@ func pullImage(imagepath string) error {
 func buildImage(devc devcontainerspec.Devcontainer) error {
 	// run docker and build the image
 	dockerFilePath := filepath.Join("./.devcontainer", devc.Config.DockerFile)
-	dockerFileBase := filepath.Dir(dockerFilePath)
-	cmd := exec.Command("docker", "build", "-f", dockerFilePath, "-t", devc.GetImageName(), dockerFileBase)
+	context := filepath.Dir(dockerFilePath)
+	if devc.Config.Context != "" {
+		logger.Debug().Str("context", context).Msg("using custom context")
+		context = filepath.Join(context, devc.Config.Context)
+	}
+	cmd := exec.Command("docker", "build", "-f", dockerFilePath, "-t", devc.GetImageName(), context)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()

@@ -19,6 +19,7 @@ const (
 type DevcontainerConfig struct {
 	Name               string
 	DockerFile         string
+	Context            string
 	Image              string
 	Mounts             []string
 	RunArgs            []string
@@ -27,8 +28,12 @@ type DevcontainerConfig struct {
 }
 
 type DevcontainerJson struct {
-	Name              string   `json:"name,omitempty"`
-	DockerFile        string   `json:"dockerFile,omitempty"`
+	Name       string `json:"name,omitempty"`
+	DockerFile string `json:"dockerFile,omitempty"`
+	Build      struct {
+		Dockerfile string `json:"dockerfile,omitempty"`
+		Context    string `json:"context,omitempty"`
+	} `json:"build"`
 	Image             string   `json:"image,omitempty"`
 	Mounts            []string `json:"mounts,omitempty"`
 	RunArgs           []string `json:"runArgs,omitempty"`
@@ -195,7 +200,11 @@ func (devc Devcontainer) GetDevcNameSuffix() string {
 // Single arguments get overwritten, arrays get appended.
 func (devc *Devcontainer) Merge(devj DevcontainerJson) {
 	devc.Config.Name = devj.Name
+	// the dockerfile can be defined either with "dockerFile" directly or with "build.dockerfile"
+	// we check both and give the "build.dockerfile" priority
 	devc.Config.DockerFile = devj.DockerFile
+	devc.Config.DockerFile = devj.Build.Dockerfile
+	devc.Config.Context = devj.Build.Context
 	devc.Config.Image = devj.Image
 	devc.Config.Mounts = append(devc.Config.Mounts, devj.Mounts...)
 	devc.Config.RunArgs = append(devc.Config.RunArgs, devj.RunArgs...)
