@@ -20,17 +20,17 @@ func WriteToLogFile(_writeToFile bool) {
 }
 
 func initLog() {
-	runLogFile, err := os.OpenFile(
-		filename,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-		0664,
-	)
-	if err != nil {
-		log.Fatal().Err(err).Msg("cannot open log file")
-	}
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: "15:04:05", NoColor: false}
 	if writeToFile {
+		runLogFile, err := os.OpenFile(
+			filename,
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+			0664,
+		)
+		if err != nil {
+			log.Fatal().Err(err).Msg("cannot open log file")
+		}
 		multi := zerolog.MultiLevelWriter(consoleWriter, runLogFile)
 		logger = zerolog.New(multi).With().Timestamp().Logger()
 	} else {
