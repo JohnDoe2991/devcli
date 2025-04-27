@@ -109,10 +109,11 @@ func parseDevcontainerJson(path string) (DevcontainerJson, error) {
 	matches := re.FindAllStringSubmatch(jsonStr, -1)
 	for _, match := range matches {
 		envVar := match[1]
-		envValue := os.Getenv(envVar)
-		if envValue == "" {
-			return DevcontainerJson{}, fmt.Errorf("environment variable %s not set", envVar)
+		envValue, exists := os.LookupEnv(envVar)
+		if !exists {
+			logger.Warn().Str("env", envVar).Msg("environment variable is not set")
 		}
+		logger.Debug().Str("env", envVar).Str("value", envValue).Msg("set env variable")
 		jsonStr = re.ReplaceAllString(jsonStr, envValue)
 	}
 
