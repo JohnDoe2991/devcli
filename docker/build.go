@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	devcontainerspec "github.com/johndoe2991/devcli/devcontainer_spec"
 )
@@ -17,7 +18,7 @@ func Build(devc devcontainerspec.Devcontainer) error {
 		if err := pullImage(devc.Config.Image); err != nil {
 			return fmt.Errorf("could not pull image: %w", err)
 		}
-	} else if devc.Config.DockerFile != "" {
+	} else if devc.Config.DockerFileContent != "" {
 		// the image has to be build, check if the image already exists
 		imageName := devc.GetImageName()
 		exists, err := checkImageExists(imageName)
@@ -27,7 +28,7 @@ func Build(devc devcontainerspec.Devcontainer) error {
 		logger.Debug().Str("imageName", imageName).Bool("exists", exists).Msg("checking if image exists")
 		if !exists {
 			// build the image
-			logger.Debug().Str("dockerfile", devc.Config.DockerFile).Msg("building image")
+			logger.Debug().Msg("building image")
 			if err := buildImage(devc); err != nil {
 				return fmt.Errorf("error while building the image: %w", err)
 			}
@@ -49,15 +50,15 @@ func pullImage(imagepath string) error {
 
 func buildImage(devc devcontainerspec.Devcontainer) error {
 	// run docker and build the image
-	dockerFilePath := filepath.Join("./.devcontainer", devc.Config.DockerFile)
-	context := filepath.Dir(dockerFilePath)
+	context := filepath.Join(devc.Cwd, "./.devcontainer")
 	if devc.Config.Context != "" {
 		logger.Debug().Str("context", context).Msg("using custom context")
 		context = filepath.Join(context, devc.Config.Context)
 	}
-	cmd := exec.Command("docker", "build", "-f", dockerFilePath, "-t", devc.GetImageName(), context)
+	cmd := exec.Command("docker", "build", "-f", "-", "-t", devc.GetImageName(), context)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = strings.NewReader(devc.Config.DockerFileContent)
 	err := cmd.Run()
 	if err != nil {
 		return err

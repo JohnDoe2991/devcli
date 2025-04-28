@@ -7,24 +7,32 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 const (
 	NamePrefix string = "devcli"
 )
 
+type RegistryAlias struct {
+	Original string `json:"original"`
+	Alias    string `json:"alias"`
+}
+
 // DevcontainerConfig represents the key fields from a devcontainer.json file
 type DevcontainerConfig struct {
 	Name               string
-	DockerFile         string
+	DockerFileContent  string
 	Context            string
 	Image              string
 	Mounts             []string
 	RunArgs            []string
 	PostStartCommands  []string
 	PostCreateCommands []string
+	RegistryAliases    []RegistryAlias
 }
 
 type DevcontainerJson struct {
@@ -39,6 +47,11 @@ type DevcontainerJson struct {
 	RunArgs           []string `json:"runArgs,omitempty"`
 	PostStartCommand  string   `json:"postStartCommand,omitempty"`
 	PostCreateCommand string   `json:"postCreateCommand,omitempty"`
+	Customizations    struct {
+		Devcli struct {
+			RegistryAliases []RegistryAlias `json:"registryAliases"`
+		} `json:"devcli"`
+	} `json:"customizations"`
 }
 
 type Devcontainer struct {
@@ -161,19 +174,8 @@ func calculateDevcontainerHash(devc Devcontainer) (string, error) {
 	h.Write(configJSON)
 
 	// If Dockerfile is specified, add its content to hash
-	if devc.Config.DockerFile != "" {
-		// Resolve Dockerfile path relative to .devcontainer directory
-		dockerfilePath := devc.Config.DockerFile
-		if !filepath.IsAbs(dockerfilePath) {
-			dockerfilePath = filepath.Join(devc.Cwd, ".devcontainer", dockerfilePath)
-		}
-
-		// Read Dockerfile content
-		dockerfileContent, err := os.ReadFile(dockerfilePath)
-		if err != nil {
-			return "", fmt.Errorf("failed to read Dockerfile: %w", err)
-		}
-		h.Write(dockerfileContent)
+	if devc.Config.DockerFileContent != "" {
+		h.Write([]byte(devc.Config.DockerFileContent))
 	}
 
 	// Generate the final hash
@@ -201,16 +203,41 @@ func (devc Devcontainer) GetDevcNamePrefix() string {
 
 // Merge a DevcontainerJson into the devcontainer config.
 // Single arguments get overwritten, arrays get appended.
-func (devc *Devcontainer) Merge(devj DevcontainerJson) {
+func (devc *Devcontainer) Merge(devj DevcontainerJson) error {
 	devc.Config.Name = devj.Name
 	// the dockerfile can be defined either with "dockerFile" directly or with "build.dockerfile"
 	// we check both and give the "build.dockerfile" priority
-	devc.Config.DockerFile = devj.DockerFile
-	devc.Config.DockerFile = devj.Build.Dockerfile
+	if devj.DockerFile != "" {
+		content, err := os.ReadFile(path.Join(devc.Cwd, ".devcontainer", devj.DockerFile))
+		if err != nil {
+			return err
+		}
+		devc.Config.DockerFileContent = string(content)
+	}
+	if devj.Build.Dockerfile != "" {
+		content, err := os.ReadFile(path.Join(devc.Cwd, ".devcontainer", devj.Build.Dockerfile))
+		if err != nil {
+			return err
+		}
+		devc.Config.DockerFileContent = string(content)
+	}
 	devc.Config.Context = devj.Build.Context
 	devc.Config.Image = devj.Image
 	devc.Config.Mounts = append(devc.Config.Mounts, devj.Mounts...)
 	devc.Config.RunArgs = append(devc.Config.RunArgs, devj.RunArgs...)
 	devc.Config.PostStartCommands = append(devc.Config.PostStartCommands, devj.PostStartCommand)
 	devc.Config.PostCreateCommands = append(devc.Config.PostCreateCommands, devj.PostCreateCommand)
+	devc.Config.RegistryAliases = append(devc.Config.RegistryAliases, devj.Customizations.Devcli.RegistryAliases...)
+	devc.ApplyRegistryAliases()
+	return nil
+}
+
+func (devc *Devcontainer) ApplyRegistryAliases() {
+	for _, alias := range devc.Config.RegistryAliases {
+		logger.Debug().Str("original", alias.Original).Str("alias", alias.Alias).Msg("apply registry alias")
+		devc.Config.Image = strings.Replace(devc.Config.Image, alias.Original, alias.Alias, -1)
+		devc.Config.DockerFileContent = strings.Replace(devc.Config.DockerFileContent, alias.Original, alias.Alias, -1)
+	}
+	logger.Debug().Msgf("new Image: %s", devc.Config.Image)
+	logger.Debug().Str("DockerfileContent", devc.Config.DockerFileContent).Msg("new Dockerfile")
 }
