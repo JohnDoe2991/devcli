@@ -125,8 +125,11 @@ func parseDevcontainerJson(path string) (DevcontainerJson, error) {
 	// replace workplace reference
 	re = regexp.MustCompile(`\${localWorkspaceFolder}`)
 	jsonStr = re.ReplaceAllString(jsonStr, path)
+	re = regexp.MustCompile(`\${localWorkspaceFolderBasename}`)
+	localWorkspaceFolderBasename := filepath.Base(path)
+	jsonStr = re.ReplaceAllString(jsonStr, localWorkspaceFolderBasename)
 	re = regexp.MustCompile(`\${containerWorkspaceFolder}`)
-	containerWorkspaceFolder := filepath.Join("/workspaces", filepath.Base(path))
+	containerWorkspaceFolder := filepath.Join("/workspaces", localWorkspaceFolderBasename)
 	jsonStr = re.ReplaceAllString(jsonStr, containerWorkspaceFolder)
 
 	// Parse the cleaned JSON
