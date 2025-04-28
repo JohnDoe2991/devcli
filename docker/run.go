@@ -51,19 +51,20 @@ func Run(devc devcontainerspec.Devcontainer) error {
 				}
 			}
 		}
+		time.Sleep(1 * time.Second) // wait for the container to be ready
+		for _, postStartCommand := range devc.Config.PostStartCommands {
+			// exec into the container
+			if postStartCommand == "" {
+				continue
+			}
+			logger.Debug().Str("container", containerName).Str("postStartCommand", postStartCommand).Msg("executing postStartCommand")
+			if err := execCommand(containerName, false, true, []string{"/bin/bash", "-ic", postStartCommand}); err != nil {
+				return err
+			}
+		}
 	}
 	// exec into the container
 	time.Sleep(1 * time.Second) // wait for the container to be ready
-	for _, postStartCommand := range devc.Config.PostStartCommands {
-		// exec into the container
-		if postStartCommand == "" {
-			continue
-		}
-		logger.Debug().Str("container", containerName).Str("postStartCommand", postStartCommand).Msg("executing postStartCommand")
-		if err := execCommand(containerName, false, true, []string{"/bin/bash", "-ic", postStartCommand}); err != nil {
-			return err
-		}
-	}
 	logger.Debug().Str("container", containerName).Msg("exec into container")
 	if err := execCommand(containerName, true, true, []string{"/bin/bash"}); err != nil {
 		return err
