@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	NameSuffix string = "devcli"
+	NamePrefix string = "devcli"
 )
 
 // DevcontainerConfig represents the key fields from a devcontainer.json file
@@ -181,19 +181,19 @@ func calculateDevcontainerHash(devc Devcontainer) (string, error) {
 func (devc Devcontainer) GetImageName() string {
 	if devc.Config.Image != "" {
 		return devc.Config.Image
-	} else if devc.Config.DockerFile != "" {
-		return devc.GetDevcNameSuffix() + devc.Hash[0:7]
+	} else if devc.Config.DockerFileContent != "" {
+		return devc.GetDevcNamePrefix() + devc.Hash[0:7]
 	} else {
 		return ""
 	}
 }
 
 func (devc Devcontainer) GetContainerName() string {
-	return devc.GetDevcNameSuffix() + devc.Hash[0:7]
+	return devc.GetDevcNamePrefix() + devc.Hash[0:7]
 }
 
-func (devc Devcontainer) GetDevcNameSuffix() string {
-	return NameSuffix + "_" + filepath.Base(devc.Cwd) + "_"
+func (devc Devcontainer) GetDevcNamePrefix() string {
+	return NamePrefix + "_" + filepath.Base(devc.Cwd) + "_"
 }
 
 // Merge a DevcontainerJson into the devcontainer config.

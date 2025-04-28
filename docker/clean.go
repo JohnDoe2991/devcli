@@ -9,15 +9,16 @@ import (
 
 // Delete a single Image.
 func CleanImage(imageName string) error {
+	logger.Debug().Str("imageName", imageName).Msg("delete image")
 	exists, err := checkImageExists(imageName)
 	if err != nil {
 		return err
 	}
 	if !exists {
+		logger.Debug().Str("imageName", imageName).Msg("image does not exist")
 		// image does not exists, return
 		return nil
 	}
-	logger.Debug().Str("imageName", imageName).Msg("delete image")
 	cmd := exec.Command("docker", "image", "rm", imageName)
 	err = cmd.Run()
 	if err != nil {
@@ -28,12 +29,14 @@ func CleanImage(imageName string) error {
 
 // Delete a single Container. If the container is running, it will be stopped.
 func CleanContainer(containerName string) error {
+	logger.Debug().Str("containerName", containerName).Msg("delete container")
 	exists, err := checkContainerExists(containerName)
 	if err != nil {
 		return err
 	}
 	if !exists {
 		// image does not exists, return
+		logger.Debug().Str("containerName", containerName).Msg("container does not exist")
 		return nil
 	}
 	isRunning, err := checkContainerRunning(containerName)
@@ -46,7 +49,6 @@ func CleanContainer(containerName string) error {
 			return err
 		}
 	}
-	logger.Debug().Str("imageName", containerName).Msg("delete container")
 	cmd := exec.Command("docker", "container", "rm", containerName)
 	err = cmd.Run()
 	if err != nil {
@@ -57,14 +59,15 @@ func CleanContainer(containerName string) error {
 
 // Delete all images corresponding to the devcontainer config.
 func CleanAllImageVersions(devc devcontainerspec.Devcontainer) error {
-	logger.Debug().Str("suffix", devc.GetDevcNameSuffix()).Msg("clean all images with suffix")
+	logger.Debug().Str("prefix", devc.GetDevcNamePrefix()).Msg("clean all images with prefix")
 	images, err := listImage()
 	if err != nil {
 		return err
 	}
-	baseName := devc.GetDevcNameSuffix()
+	logger.Debug().Strs("images", images).Msg("found images")
+	baseName := devc.GetDevcNamePrefix()
 	for _, image := range images {
-		if strings.HasSuffix(image, baseName) {
+		if strings.HasPrefix(image, baseName) {
 			err := CleanImage(image)
 			if err != nil {
 				return err
@@ -76,14 +79,15 @@ func CleanAllImageVersions(devc devcontainerspec.Devcontainer) error {
 
 // Delete all containers corresponding to the devcontainer config.
 func CleanAllContainerVersions(devc devcontainerspec.Devcontainer) error {
-	logger.Debug().Str("suffix", devc.GetDevcNameSuffix()).Msg("clean all containers with suffix")
+	logger.Debug().Str("prefix", devc.GetDevcNamePrefix()).Msg("clean all containers with prefix")
 	containers, err := listContainers()
 	if err != nil {
 		return err
 	}
-	baseName := devc.GetDevcNameSuffix()
+	logger.Debug().Strs("containers", containers).Msg("found containers")
+	baseName := devc.GetDevcNamePrefix()
 	for _, container := range containers {
-		if strings.HasSuffix(container, baseName) {
+		if strings.HasPrefix(container, baseName) {
 			err := CleanContainer(container)
 			if err != nil {
 				return err

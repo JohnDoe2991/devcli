@@ -74,11 +74,11 @@ func main() {
 		if args.Clean.All {
 			err := docker.CleanAllContainerVersions(devc)
 			if err != nil {
-				logger.Fatal().Err(err).Str("basename", devc.GetDevcNameSuffix()).Msg("could not delete all containers for this working directory")
+				logger.Fatal().Err(err).Str("basename", devc.GetDevcNamePrefix()).Msg("could not delete all containers for this working directory")
 			}
 			err = docker.CleanAllImageVersions(devc)
 			if err != nil {
-				logger.Fatal().Err(err).Str("basename", devc.GetDevcNameSuffix()).Msg("could not delete all images for this working directory")
+				logger.Fatal().Err(err).Str("basename", devc.GetDevcNamePrefix()).Msg("could not delete all images for this working directory")
 			}
 		} else {
 			err := docker.CleanContainer(devc.GetContainerName())
