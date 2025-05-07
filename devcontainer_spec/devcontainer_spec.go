@@ -198,7 +198,7 @@ func (devc Devcontainer) GetContainerName() string {
 }
 
 func (devc Devcontainer) GetDevcNamePrefix() string {
-	return NamePrefix + "_" + filepath.Base(devc.Cwd) + "_"
+	return NamePrefix + "_" + strings.ToLower(filepath.Base(devc.Cwd)) + "_"
 }
 
 // Merge a DevcontainerJson into the devcontainer config.
