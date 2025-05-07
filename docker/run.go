@@ -52,7 +52,7 @@ func Run(devc devcontainerspec.Devcontainer) error {
 				}
 			}
 		}
-		time.Sleep(1 * time.Second) // wait for the container to be ready
+		time.Sleep(300 * time.Millisecond) // wait for the container to be ready
 		for _, postStartCommand := range devc.Config.PostStartCommands {
 			// exec into the container
 			if postStartCommand == "" {
