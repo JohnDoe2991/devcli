@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -46,7 +47,7 @@ func Run(devc devcontainerspec.Devcontainer) error {
 					continue
 				}
 				// exec into the container
-				if err := execCommand(containerName, false, true, []string{"/bin/bash", "-ic", postCreateCommand}); err != nil {
+				if err := execCommand(containerName, false, true, "", []string{"/bin/bash", "-ic", postCreateCommand}); err != nil {
 					return err
 				}
 			}
@@ -58,7 +59,7 @@ func Run(devc devcontainerspec.Devcontainer) error {
 				continue
 			}
 			logger.Debug().Str("container", containerName).Str("postStartCommand", postStartCommand).Msg("executing postStartCommand")
-			if err := execCommand(containerName, false, true, []string{"/bin/bash", "-ic", postStartCommand}); err != nil {
+			if err := execCommand(containerName, false, true, "", []string{"/bin/bash", "-ic", postStartCommand}); err != nil {
 				return err
 			}
 		}
@@ -66,7 +67,7 @@ func Run(devc devcontainerspec.Devcontainer) error {
 	// exec into the container
 	time.Sleep(1 * time.Second) // wait for the container to be ready
 	logger.Debug().Str("container", containerName).Msg("exec into container")
-	if err := execCommand(containerName, true, true, []string{"/bin/bash"}); err != nil {
+	if err := execCommand(containerName, true, true, "/workspaces/"+path.Base(devc.Cwd), []string{"/bin/bash"}); err != nil {
 		return err
 	}
 	return nil
@@ -137,7 +138,7 @@ func createAndStartContainer(devc devcontainerspec.Devcontainer) error {
 	return nil
 }
 
-func execCommand(containerName string, interactive bool, asUser bool, args []string) error {
+func execCommand(containerName string, interactive bool, asUser bool, workingDir string, args []string) error {
 	// exec into the container
 	cmdargs := []string{"exec"}
 	if interactive {
@@ -150,6 +151,9 @@ func execCommand(containerName string, interactive bool, asUser bool, args []str
 		}
 		cmdargs = append(cmdargs, "--user", currentUser.Uid+":"+currentUser.Gid)
 	}
+	if workingDir != "" {
+		cmdargs = append(cmdargs, "-w", workingDir)
+	}
 	cmdargs = append(cmdargs, containerName)
 	cmdargs = append(cmdargs, args...)
 	cmd := exec.Command("docker", cmdargs...)
@@ -158,7 +162,7 @@ func execCommand(containerName string, interactive bool, asUser bool, args []str
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	logger.Debug().Str("container", containerName).Bool("interactive", interactive).Bool("asUser", asUser).Strs("args", args).Msg("executing command in container")
+	logger.Debug().Str("container", containerName).Bool("interactive", interactive).Bool("asUser", asUser).Str("workingDir", workingDir).Strs("args", args).Msg("executing command in container")
 	err := cmd.Run()
 	if err != nil {
 		return err
