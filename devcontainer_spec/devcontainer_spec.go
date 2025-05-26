@@ -132,7 +132,7 @@ func parseDevcontainerJson(path string) (DevcontainerJson, error) {
 			logger.Warn().Str("env", envVar).Msg("environment variable is not set")
 		}
 		logger.Debug().Str("env", envVar).Str("value", envValue).Msg("set env variable")
-		jsonStr = re.ReplaceAllString(jsonStr, envValue)
+		jsonStr = strings.ReplaceAll(jsonStr, match[0], envValue)
 	}
 
 	// replace workplace reference
