@@ -21,7 +21,7 @@ type Args struct {
 }
 
 func (Args) Version() string {
-	return "0.1.0"
+	return version
 }
 
 func main() {
@@ -36,6 +36,8 @@ func main() {
 		logging.SetLevelFromString("debug")
 	}
 	logger := logging.GetLogger("main")
+
+	logger.Debug().Msgf("version: %s", version)
 
 	cwd, err := os.Getwd()
 	if err != nil {
