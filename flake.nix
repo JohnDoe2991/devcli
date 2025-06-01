@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.buildGoModule {
           pname = "devcli";
-          version = "1.1.0";
+          version = "1.2.0";
           src = ./.;
           vendorHash = "sha256-JJJhzR0cokKPTTrFKdlFrUHmbsSz/4nnRuNBt7WPKA4=";
           

@@ -1,3 +1,13 @@
+## 1.2.0 (2025-06-01)
+
+### Feat
+
+- add nix flake
+
+### Fix
+
+- correct formating
+
 ## 1.1.0 (2025-05-27)
 
 ### Feat
