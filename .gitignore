@@ -1,4 +1,5 @@
 # ignore .git not for git but for all other search engines which use .gitignore like ripgrep
 /.git
 /build
+/result
 

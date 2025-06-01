@@ -7,4 +7,5 @@ update_changelog_on_bump = true
 annotated_tag = true
 version_files = [
     "version.go:version = "
+    "flake.nix:version = "
 ]
